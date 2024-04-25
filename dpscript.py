@@ -9,10 +9,9 @@ MONGOPASS = os.getenv('MONGOPASS')
 uri = "mongodb+srv://cluster0.pnxzwgz.mongodb.net/"
 client = MongoClient(uri, username='nmagee', password=MONGOPASS, connectTimeoutMS=200, retryWrites=True)
 # specify a database
-db = client.cluster0
+db = client.vaibhav
 # specify a collection
-collection = db.pnxzwgz
-
+collection = db.jha
 
 # Listing Directory Contents
 path = "data"
@@ -22,16 +21,34 @@ for (root, dirs, file) in os.walk(path):
 
 
 # Importing
-# Loading or Opening the json file
 
-with open('data/*.json') as file:
-    file_data = json.load(file)
+directory = 'data/'
+load_error=0
+import_error=0
+for filename in os.listdir(directory):
+    filepath = os.path.join(directory, filename)
+    with open(filepath) as file:
+        try:
+            json_data = json.load(file)
+        except Exception as e:
+            print(e, "error when loading", file)
+            load_error+=1
+            continue
+    if isinstance(json_data, list):
+        try:
+            collection.insert_many(json_data)
+        except Exception as e:
+            print(e, "when importing into mongo")
+            import_error+=1
+            continue
+    else:
+        try:
+            collection.insert_one(json_data)
+        except Exception as e:
+            print(e)
+            import_error+=1
+            continue
 
 
-# Inserting the loaded data in the collection
-# if JSON contains data more than one entry
-# insert_many is used else insert_one is used
-if isinstance(file_data, list):
-    collection.insert_many(file_data)  
-else:
-    collection.insert_one(file_data)
+print("Number of load errors: ", load_error)
+print("Number of import errors: ", import_error)
